@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-and-push:
-    uses: ./.github/workflows/build-and-push.yml
+    uses: ./.github/workflows/Build-push.yaml
     with:
       environment: dev
     secrets:
@@ -15,7 +15,7 @@ jobs:
 
   restart-app:
     needs: build-and-push
-    uses: ./.github/workflows/argocd-restart.yml
+    uses: ./.github/workflows/argocd-restart.yaml
     with:
       environment: dev
       image-tag: ${{ needs.build-and-push.outputs.image-tag }}

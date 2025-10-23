@@ -1,0 +1,118 @@
+name: Build and Push UI Image
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build-push-ui:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'dev' && 'dev' || inputs.environment == 'qa' && 'qa' || inputs.environment == 'prod' && 'prod' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          TOKEN=$(az acr login --name ${{ vars.ACR_LOGIN_SERVER }} --expose-token --output tsv --query refreshToken)
+          if [ -z "$TOKEN" ]; then
+            echo "Failed to get ACR token"
+            exit 1
+          fi
+          echo "$TOKEN" | docker login ${{ vars.ACR_LOGIN_SERVER }}.azurecr.io -u 00000000-0000-0000-0000-000000000000 --password-stdin
+
+      - name: Set Image Tags
+        id: tags
+        env:
+          ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          ACR_FULL="${ACR_LOGIN_SERVER}.azurecr.io"
+          IMAGE_NAME="revinci-ui"
+          VERSION_TAG="build-${BUILD_NUMBER}"
+
+          echo "acr_full=${ACR_FULL}" >> $GITHUB_OUTPUT
+          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+
+      - name: Build and Push UI Image
+        env:
+          ACR_FULL: ${{ steps.tags.outputs.acr_full }}
+          IMAGE_NAME: ${{ steps.tags.outputs.image_name }}
+          VERSION_TAG: ${{ steps.tags.outputs.version_tag }}
+          BUILD_ENV: ${{ steps.tags.outputs.environment }}
+        run: |
+          echo "=========================================="
+          echo "Building UI Image"
+          echo "=========================================="
+          echo "ACR: ${ACR_FULL}"
+          echo "Image: ${IMAGE_NAME}"
+          echo "Version: ${VERSION_TAG}"
+          echo "Environment: ${BUILD_ENV}"
+          echo "=========================================="
+
+          # Build Docker image with multiple tags
+          docker build \
+            -f Dockerfile \
+            --build-arg BUILD_ENV=${BUILD_ENV} \
+            -t ${ACR_FULL}/${IMAGE_NAME}:${VERSION_TAG} \
+            -t ${ACR_FULL}/${IMAGE_NAME}:latest \
+            -t ${ACR_FULL}/${IMAGE_NAME}:${BUILD_ENV}-latest \
+            client/
+
+          echo "✅ Docker image built successfully"
+
+          # Push all tags
+          echo "Pushing images to ACR..."
+          docker push ${ACR_FULL}/${IMAGE_NAME}:${VERSION_TAG}
+          docker push ${ACR_FULL}/${IMAGE_NAME}:latest
+          docker push ${ACR_FULL}/${IMAGE_NAME}:${BUILD_ENV}-latest
+
+          echo "✅ All images pushed successfully"
+
+      - name: Output Summary
+        env:
+          ACR_FULL: ${{ steps.tags.outputs.acr_full }}
+          IMAGE_NAME: ${{ steps.tags.outputs.image_name }}
+          VERSION_TAG: ${{ steps.tags.outputs.version_tag }}
+          ENVIRONMENT: ${{ steps.tags.outputs.environment }}
+        run: |
+          echo "=========================================="
+          echo "✅ UI Image Build Complete"
+          echo "=========================================="
+          echo "Environment: ${ENVIRONMENT}"
+          echo "ACR Server: ${ACR_FULL}"
+          echo ""
+          echo "Image Tags:"
+          echo "  - ${ACR_FULL}/${IMAGE_NAME}:${VERSION_TAG}"
+          echo "  - ${ACR_FULL}/${IMAGE_NAME}:latest"
+          echo "  - ${ACR_FULL}/${IMAGE_NAME}:${ENVIRONMENT}-latest"
+          echo ""
+          echo "To deploy in Kubernetes:"
+          echo "  image: ${ACR_FULL}/${IMAGE_NAME}:${VERSION_TAG}"
+          echo "=========================================="

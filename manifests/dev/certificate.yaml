@@ -1,13 +1,13 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: jain-login-dev-cert
-  namespace: jain-university-dev
+  name: frontend-dev-cert
+  namespace: gvk-platform-dev
   labels:
-    app: jain-login
+    app: frontend-login
     environment: dev
 spec:
-  secretName: jain-login-dev-tls
+  secretName: frontend-dev-tls
   duration: 2160h
   renewBefore: 720h
   commonName: jain-dev.duckdns.org

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+---
+# Install cert-manager using Helm (run this command):
+# helm repo add jetstack https://charts.jetstack.io
+# helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+#
+# Install NGINX Ingress Controller using Helm (run this command):
+# helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+# helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace

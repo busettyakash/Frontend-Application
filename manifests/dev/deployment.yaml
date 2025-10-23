@@ -33,7 +33,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: Frontend-dev
-        image: Frontend-dev:latest
+        image: <YOUR_ACR_LOGIN_SERVER>/frontend-dev:latest
         imagePullPolicy: Always
         ports:
         - name: http

@@ -52,7 +52,7 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
         run: |
           ACR_FULL="${ACR_LOGIN_SERVER}.azurecr.io"
-          IMAGE_NAME="revinci-ui"
+          IMAGE_NAME="frontend-dev"
           VERSION_TAG="build-${BUILD_NUMBER}"
 
           echo "acr_full=${ACR_FULL}" >> $GITHUB_OUTPUT

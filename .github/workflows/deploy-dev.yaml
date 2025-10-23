@@ -2,25 +2,23 @@ name: Deploy to Dev
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - develop
-
-permissions:
-  contents: write
-  id-token: write
 
 jobs:
   build-and-push:
-    uses: ./.github/workflows/Build-push.yaml
-    with:
-      environment: dev
-    secrets: inherit
-
-  restart-app:
-    needs: build-and-push
-    uses: ./.github/workflows/argocd-restart.yaml
+    uses: ./.github/workflows/build-and-push.yml
     with:
       environment: dev
     secrets:
-      ARGO_PWD: ${{ secrets.ARGO_PWD }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  restart-app:
+    needs: build-and-push
+    uses: ./.github/workflows/argocd-restart.yml
+    with:
+      environment: dev
+      image-tag: ${{ needs.build-and-push.outputs.image-tag }}
+    secrets:
+      ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+      ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}

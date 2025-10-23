@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-and-push:
-    uses: ./.github/workflows/build-push.yaml
+    uses: ./.github/workflows/Build-push.yaml
     with:
       environment: dev
     secrets: inherit

@@ -2,6 +2,9 @@ name: Deploy to Dev
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - develop
 
 permissions:
   contents: write

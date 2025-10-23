@@ -35,14 +35,10 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Login to Azure Container Registry
+      - name: Login to ACR via OIDC
         run: |
-          TOKEN=$(az acr login --name ${{ vars.ACR_LOGIN_SERVER }} --expose-token --output tsv --query refreshToken)
-          if [ -z "$TOKEN" ]; then
-            echo "Failed to get ACR token"
-            exit 1
-          fi
-          echo "$TOKEN" | docker login ${{ vars.ACR_LOGIN_SERVER }}.azurecr.io -u 00000000-0000-0000-0000-000000000000 --password-stdin
+          TOKEN=$(az acr login --name gvkplatformacr --expose-token --output tsv --query refreshToken)
+          echo "$TOKEN" | docker login gvkplatformacr.azurecr.io -u 00000000-0000-0000-0000-000000000000 --password-stdin
 
       - name: Set Image Tags
         id: tags

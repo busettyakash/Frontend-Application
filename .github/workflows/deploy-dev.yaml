@@ -3,6 +3,10 @@ name: Deploy to Dev
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write       # needed by Build-push.yaml
+  id-token: write       # needed for Azure login if using OIDC
+
 jobs:
   build-and-push:
     uses: ./.github/workflows/Build-push.yaml
@@ -18,7 +22,7 @@ jobs:
     uses: ./.github/workflows/argocd-restart.yaml
     with:
       environment: dev
-      image-tag: ${{ needs.BUuild-push.outputs.image-tag }}
+      image-tag: ${{ needs.build-and-push.outputs.image-tag }}
     secrets:
       ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
       ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}

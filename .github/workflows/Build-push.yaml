@@ -83,7 +83,7 @@ jobs:
             -t ${ACR_FULL}/${IMAGE_NAME}:${VERSION_TAG} \
             -t ${ACR_FULL}/${IMAGE_NAME}:latest \
             -t ${ACR_FULL}/${IMAGE_NAME}:${BUILD_ENV}-latest \
-            client/
+            .
 
           echo "✅ Docker image built successfully"
 

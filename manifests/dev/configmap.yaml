@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: gvk-platform-dev
+  labels:
+    app: frontend-login
+    environment: dev
+data:
+  NODE_ENV: "development"
+  NEXT_PUBLIC_API_URL: "https://jain-dev.duckdns.org"
+  LOG_LEVEL: "debug"
+  PORT: "3000"

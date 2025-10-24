@@ -10,8 +10,6 @@ on:
         required: true
         type: string
     secrets:
-      AZURE_CREDENTIALS:
-        required: true
       ARGOCD_SERVER:
         required: true
       ARGOCD_USERNAME:
@@ -24,7 +22,11 @@ on:
         required: true
       AZURE_SUBSCRIPTION_ID:
         required: true
-
+        
+permissions:
+  id-token: write
+  contents: write
+  
 env:
   ACR_NAME: gvkplatformacr
   FRONTEND_IMAGE: frontend-dev

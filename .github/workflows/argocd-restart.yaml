@@ -86,7 +86,7 @@ jobs:
           IMAGE="$ACR_NAME.azurecr.io/$FRONTEND_IMAGE:${{ inputs.environment }}-latest"
           echo "Updating image to: $IMAGE"
           sed -i "s|image: .*|image: ${IMAGE}|g" $DEPLOYMENT_FILE
-          kubectl apply -f $DEPLOYMENT_FILE -n ${{ inputs.environment }}
+          kubectl apply -f $DEPLOYMENT_FILE -n gvk-platform-${{ inputs.environment }}
 
       - name: Refresh & Sync ArgoCD Application
         run: |

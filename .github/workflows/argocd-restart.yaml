@@ -45,6 +45,7 @@ jobs:
       # Step 4: Setup kubeconfig from secret
       - name: Setup Kubeconfig
         run: |
+          mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 --decode > $HOME/.kube/config
           export KUBECONFIG=$HOME/.kube/config
 

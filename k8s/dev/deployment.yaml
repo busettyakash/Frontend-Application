@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: gvkplatformacr.azurecr.io/frontend-dev:lastest  # Replace with your ACR image
+          image: gvkplatformacr.azurecr.io/frontend-dev:dev-latest  # Replace with your ACR image
           ports:
             - containerPort: 3000
           envFrom:

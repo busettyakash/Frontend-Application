@@ -7,7 +7,7 @@ on:
         required: true
         type: string
     secrets:
-      ARGO_PWD:
+      ARGOCD_PASSWORD:
         required: true
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
     environment: ${{ inputs.environment }}
     env:
       ARGOCD_DOMAIN: ${{ vars.ARGOCD_DOMAIN }}
-      ARGO_PWD: ${{ secrets.ARGO_PWD }}
+      ARGO_PWD: ${{ secrets.ARGOCD_PASSWORD }}
       ENVIRONMENT: ${{ inputs.environment }}
 
     steps:
@@ -34,7 +34,7 @@ jobs:
         run: |
           set -e
           echo "Logging into ArgoCD..."
-          argocd login $ARGOCD_DOMAIN --username builduser --password $ARGO_PWD --insecure --grpc-web
+          argocd login $ARGOCD_DOMAIN --username builduser --password ARGOCD_PASSWORD --insecure --grpc-web
 
           echo "Restarting 'frontend' deployment..."
           argocd app actions run frontend restart --kind Deployment --all --grpc-web

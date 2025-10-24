@@ -42,7 +42,13 @@ jobs:
           chmod +x argocd
           sudo mv argocd /usr/local/bin/
 
-      # Step 4: Login to ArgoCD
+      # Step 4: Setup kubeconfig from secret
+      - name: Setup Kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > $HOME/.kube/config
+          export KUBECONFIG=$HOME/.kube/config
+
+      # Step 5: Login to ArgoCD
       - name: ArgoCD Login
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
@@ -52,13 +58,13 @@ jobs:
             --password ${{ secrets.ARGOCD_PASSWORD }} \
             --insecure
 
-      # Step 5: Ensure namespace exists
+      # Step 6: Ensure Kubernetes namespace exists
       - name: Ensure Kubernetes namespace
         run: |
           NAMESPACE="${{ inputs.environment }}"
           kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
 
-      # Step 6: Update Deployment YAML with new image
+      # Step 7: Update Deployment YAML with new image
       - name: Update Deployment Image
         run: |
           DEPLOYMENT_FILE="k8s/${{ inputs.environment }}/deployment.yaml"
@@ -67,10 +73,8 @@ jobs:
           sed -i "s|image: .*|image: ${IMAGE}|g" $DEPLOYMENT_FILE
           kubectl apply -f $DEPLOYMENT_FILE -n ${{ inputs.environment }}
 
-      # Step 7: Sync ArgoCD Application
+      # Step 8: Sync ArgoCD Application
       - name: Sync ArgoCD Application
-        env:
-          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
         run: |
           ARGOCD_APP="frontend-${{ inputs.environment }}"
           argocd app sync $ARGOCD_APP

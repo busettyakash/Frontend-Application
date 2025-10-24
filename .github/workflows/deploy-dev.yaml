@@ -19,9 +19,6 @@ jobs:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    outputs:
-      # Make sure your Build-push.yaml sets this output
-      image-tag: ${{ steps.tags.outputs.version_tag }}
 
   # ==========================
   # Step 2: Restart Application via ArgoCD
@@ -31,8 +28,10 @@ jobs:
     uses: ./.github/workflows/argocd-restart.yaml
     with:
       environment: dev
+      # Reference output from build-and-push workflow
       image-tag: ${{ needs.build-and-push.outputs.image-tag }}
     secrets:
       ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
       ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
       ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+      KUBECONFIG: ${{ secrets.KUBECONFIG }}

@@ -17,9 +17,32 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: gvkplatformacr.azurecr.io/frontend-dev:dev-latest  # Replace with your ACR image
+          # Image will be dynamically updated via GitHub Actions workflow
+          image: gvkplatformacr.azurecr.io/frontend-dev:dev-latest
           ports:
             - containerPort: 3000
           envFrom:
             - configMapRef:
                 name: frontend-config
+          # Readiness probe ensures traffic is only sent to healthy pods
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          # Liveness probe restarts pod if the app becomes unresponsive
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          # Resource limits to avoid overconsumption
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

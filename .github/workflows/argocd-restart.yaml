@@ -67,7 +67,7 @@ jobs:
 
       - name: Ensure Kubernetes namespace exists
         run: |
-          NAMESPACE="${{ inputs.environment }}"
+          NAMESPACE=gvk-platform-${{ inputs.environment }}
           kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
 
       - name: ArgoCD Login

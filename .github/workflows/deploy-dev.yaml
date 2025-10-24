@@ -4,10 +4,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write       # needed by Build-push.yaml
-  id-token: write       # needed for Azure login if using OIDC
+  contents: write       # Needed by Build-push.yaml
+  id-token: write       # Needed for Azure login if using OIDC
 
 jobs:
+  # ==========================
+  # Step 1: Build and Push Docker Image
+  # ==========================
   build-and-push:
     uses: ./.github/workflows/Build-push.yaml
     with:
@@ -16,7 +19,13 @@ jobs:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    outputs:
+      # Make sure your Build-push.yaml sets this output
+      image-tag: ${{ steps.tags.outputs.version_tag }}
 
+  # ==========================
+  # Step 2: Restart Application via ArgoCD
+  # ==========================
   restart-app:
     needs: build-and-push
     uses: ./.github/workflows/argocd-restart.yaml
@@ -26,3 +35,4 @@ jobs:
     secrets:
       ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
       ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+      ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}

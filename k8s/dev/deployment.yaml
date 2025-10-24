@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: gvkplatformacr.azurecr.io/frontend-dev:PLACEHOLDER
+          image: gvkplatformacr.azurecr.io/frontend-dev:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

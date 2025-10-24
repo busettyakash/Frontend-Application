@@ -6,7 +6,7 @@ on:
       environment:
         required: true
         type: string
-      image-tag:                    
+      image-tag:
         required: true
         type: string
     secrets:
@@ -26,7 +26,7 @@ on:
 permissions:
   id-token: write
   contents: write
-  
+
 env:
   ACR_NAME: gvkplatformacr
   FRONTEND_IMAGE: frontend-dev
@@ -74,15 +74,21 @@ jobs:
           NAMESPACE=gvk-platform-${{ inputs.environment }}
           kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
 
-      - name: ArgoCD Login
+      - name: ArgoCD Login & Export Token
+        id: argocd-login
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
         run: |
           set -e
-          argocd login $ARGOCD_SERVER \
+          echo "Logging into ArgoCD server $ARGOCD_SERVER"
+          # Login and get bearer token
+          ARGOCD_TOKEN=$(argocd login $ARGOCD_SERVER \
             --username ${{ secrets.ARGOCD_USERNAME }} \
             --password ${{ secrets.ARGOCD_PASSWORD }} \
-            --insecure
+            --insecure \
+            --grpc-web \
+            --auth-token | grep "bearer" | awk '{print $2}')
+          echo "ARGOCD_TOKEN=$ARGOCD_TOKEN" >> $GITHUB_ENV
 
       - name: Update Deployment Image & Apply
         run: |
@@ -94,16 +100,18 @@ jobs:
           sed -i "s|image: .*|image: ${IMAGE}|g" $DEPLOYMENT_FILE
           kubectl apply -f $DEPLOYMENT_FILE -n $NAMESPACE
 
-      - name: Refresh & Sync ArgoCD Application
+      - name: Refresh, Sync & Restart ArgoCD App
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ env.ARGOCD_TOKEN }}
         run: |
           set -e
           ARGOCD_APP="frontend"
           NAMESPACE=gvk-platform-${{ inputs.environment }}
           echo "Refreshing ArgoCD app: $ARGOCD_APP"
-          argocd app refresh $ARGOCD_APP --insecure
+          argocd app refresh $ARGOCD_APP --insecure --grpc-web
           echo "Syncing ArgoCD app: $ARGOCD_APP"
-          argocd app sync $ARGOCD_APP --insecure
+          argocd app sync $ARGOCD_APP --insecure --grpc-web
           echo "Waiting for app to be healthy and synced"
-          argocd app wait $ARGOCD_APP --timeout 300 --insecure
-          echo "Restarting K8s deployment"
+          argocd app wait $ARGOCD_APP --timeout 300 --insecure --grpc-web
+          echo "Restarting K8s deployment: $ARGOCD_APP"
           kubectl rollout restart deployment $ARGOCD_APP -n $NAMESPACE

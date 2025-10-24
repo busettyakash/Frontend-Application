@@ -16,7 +16,7 @@ on:
         required: true
       ARGOCD_PASSWORD:
         required: true
-      KUBECONFIG:
+      KUBECONFIG_B64:
         required: true
 
 env:
@@ -42,10 +42,10 @@ jobs:
           chmod +x argocd
           sudo mv argocd /usr/local/bin/
 
-      - name: Setup kubeconfig
+      - name: Setup kubeconfig from Base64
         run: |
           mkdir -p $HOME/.kube
-          printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 --decode > $HOME/.kube/config
           export KUBECONFIG=$HOME/.kube/config
 
       - name: Test kubeconfig

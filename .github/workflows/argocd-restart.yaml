@@ -16,9 +16,6 @@ on:
         required: true
       ARGOCD_PASSWORD:
         required: true
-      KUBECONFIG:
-        required: true
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -41,13 +38,6 @@ jobs:
           curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           chmod +x argocd
           sudo mv argocd /usr/local/bin/
-
-      # Step 4: Setup kubeconfig from secret
-      - name: Setup Kubeconfig
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > $HOME/.kube/config
-          export KUBECONFIG=$HOME/.kube/config
 
       # Step 5: Login to ArgoCD
       - name: ArgoCD Login

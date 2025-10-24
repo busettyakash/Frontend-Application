@@ -18,7 +18,7 @@ spec:
       containers:
         - name: frontend
           # Image will be dynamically updated via GitHub Actions workflow
-          image: gvkplatformacr.azurecr.io/frontend-dev:build-32
+          image: gvkplatformacr.azurecr.io/frontend-dev:latest
           ports:
             - containerPort: 3000
           envFrom:

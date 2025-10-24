@@ -1,4 +1,4 @@
-name: Template for Restart Application Using ArgoCD
+name: Deploy Frontend via ArgoCD
 
 on:
   workflow_call:
@@ -10,69 +10,68 @@ on:
         required: true
         type: string
     secrets:
+      ARGOCD_SERVER:
+        required: true
       ARGOCD_USERNAME:
         required: true
       ARGOCD_PASSWORD:
         required: true
+      KUBECONFIG:
+        required: true
 
 jobs:
   deploy:
-    name: Deploy via ArgoCD
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # Step 2: Install kubectl
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
+      # Step 3: Install ArgoCD CLI
       - name: Install ArgoCD CLI
         run: |
-          # Install in user directory to avoid permission issues
-          mkdir -p $HOME/bin
-          curl -sSL -o $HOME/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          chmod +x $HOME/bin/argocd
-          echo "$HOME/bin" >> $GITHUB_PATH
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
 
+      # Step 4: Login to ArgoCD
       - name: ArgoCD Login
         env:
-          ARGOCD_SERVER: ${{ env.ARGOCD_SERVER }}
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
         run: |
           argocd login $ARGOCD_SERVER \
             --username ${{ secrets.ARGOCD_USERNAME }} \
             --password ${{ secrets.ARGOCD_PASSWORD }} \
             --insecure
 
-      - name: Ensure Namespace Exists
+      # Step 5: Ensure namespace exists
+      - name: Ensure Kubernetes namespace
         run: |
+          NAMESPACE="${{ inputs.environment }}"
           kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
 
-      - name: Apply ConfigMap
-        run: |
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: ConfigMap
-          metadata:
-            name: frontend-config
-            namespace: $NAMESPACE
-          data:
-            NEXT_PUBLIC_API_URL: "$FRONTEND_DOMAIN"
-            NEXT_PUBLIC_ENV: "development"
-            NEXT_PUBLIC_FEATURE_FLAG: "true"
-          EOF
-
+      # Step 6: Update Deployment YAML with new image
       - name: Update Deployment Image
         run: |
-          DEPLOYMENT_FILE="k8s/dev/deployment.yaml"
-          IMAGE="$ACR_NAME.azurecr.io/$FRONTEND_IMAGE:${{ inputs.image-tag }}"
+          DEPLOYMENT_FILE="k8s/${{ inputs.environment }}/deployment.yaml"
+          IMAGE="$ACR_NAME.azurecr.io/$FRONTEND_IMAGE:${{ inputs['image-tag'] }}"
+          echo "Updating image in $DEPLOYMENT_FILE -> $IMAGE"
           sed -i "s|image: .*|image: ${IMAGE}|g" $DEPLOYMENT_FILE
-          kubectl apply -f $DEPLOYMENT_FILE -n $NAMESPACE
+          kubectl apply -f $DEPLOYMENT_FILE -n ${{ inputs.environment }}
 
+      # Step 7: Sync ArgoCD Application
       - name: Sync ArgoCD Application
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
         run: |
+          ARGOCD_APP="frontend-${{ inputs.environment }}"
           argocd app sync $ARGOCD_APP
-          argocd app wait $ARGOCD_APP --timeout 120
+          argocd app wait $ARGOCD_APP --timeout 180

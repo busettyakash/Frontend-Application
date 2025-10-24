@@ -6,9 +6,6 @@ on:
       environment:
         required: true
         type: string
-      image-tag:
-        required: true
-        type: string
     secrets:
       ARGOCD_SERVER:
         required: true
@@ -59,7 +56,7 @@ jobs:
 
       - name: Get AKS Credentials
         run: |
-         az aks get-credentials --resource-group gvk-platform-rg --name gvk-platform-aks --overwrite-existing
+          az aks get-credentials --resource-group gvk-platform-rg --name gvk-platform-aks --overwrite-existing
           kubectl get nodes
 
       - name: Test kubectl access
@@ -82,8 +79,8 @@ jobs:
       - name: Update Deployment Image & Apply
         run: |
           DEPLOYMENT_FILE="k8s/${{ inputs.environment }}/deployment.yaml"
-          IMAGE="$ACR_NAME.azurecr.io/$FRONTEND_IMAGE:${{ inputs['image-tag'] }}"
-          # Update the image in deployment.yaml
+          IMAGE="$ACR_NAME.azurecr.io/$FRONTEND_IMAGE:${{ inputs.environment }}-latest"
+          echo "Updating image to: $IMAGE"
           sed -i "s|image: .*|image: ${IMAGE}|g" $DEPLOYMENT_FILE
           kubectl apply -f $DEPLOYMENT_FILE -n ${{ inputs.environment }}
 
@@ -93,5 +90,4 @@ jobs:
           argocd app refresh $ARGOCD_APP
           argocd app sync $ARGOCD_APP
           argocd app wait $ARGOCD_APP --timeout 300
-          # Optional: restart pods to ensure deployment is applied
           kubectl rollout restart deployment frontend -n ${{ inputs.environment }}

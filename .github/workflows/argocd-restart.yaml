@@ -65,9 +65,6 @@ jobs:
           az aks get-credentials --resource-group gvk-platform-rg --name gvk-platform-aks --overwrite-existing
           kubectl get nodes
 
-      - name: Test kubectl access
-        run: kubectl get namespaces
-
       - name: Ensure Kubernetes namespace exists
         run: |
           set -e

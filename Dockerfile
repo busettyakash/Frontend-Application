@@ -1,7 +1,7 @@
 # ==========================
 # 🏗️ Stage 1: Build the Next.js app
 # ==========================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -21,7 +21,7 @@ RUN npm run build
 # ==========================
 # 🚀 Stage 2: Production image
 # ==========================
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
@@ -29,7 +29,7 @@ WORKDIR /app
 # Install dumb-init for proper signal handling (important for containers)
 RUN apk add --no-cache dumb-init
 
-# Use built-in non-root user (pre-created in Node base image)
+# Use built-in non-root user (from Node base image)
 USER node
 
 # Copy built app and dependencies from builder stage
@@ -42,7 +42,7 @@ COPY --from=builder --chown=node:node /app/public ./public
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Optional build metadata labels
+# Optional metadata labels
 ARG BUILD_ID=unknown
 ARG BUILD_DATE
 ARG VCS_REF
@@ -52,15 +52,15 @@ LABEL org.opencontainers.image.build-id="${BUILD_ID}"
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
 
-# Health check to verify app availability
+# Health check for app
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
-# Expose app port
+# Expose port
 EXPOSE 3000
 
-# Use dumb-init as entrypoint to properly handle PID 1 signals
+# Use dumb-init for PID 1 signal handling
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the Next.js server
+# Start the Next.js production server
 CMD ["node_modules/.bin/next", "start"]

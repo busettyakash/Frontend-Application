@@ -46,7 +46,9 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 --decode > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
           export KUBECONFIG=$HOME/.kube/config
+          echo "KUBECONFIG setup completed"
 
       - name: Test kubeconfig
         run: |

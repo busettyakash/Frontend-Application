@@ -16,30 +16,38 @@ on:
         required: true
       ARGOCD_PASSWORD:
         required: true
+      KUBECONFIG:
+        required: true
+
+env:
+  ACR_NAME: gvkplatformacr
+  FRONTEND_IMAGE: frontend-dev
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Install kubectl
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
-      # Step 3: Install ArgoCD CLI
       - name: Install ArgoCD CLI
         run: |
           curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           chmod +x argocd
           sudo mv argocd /usr/local/bin/
 
-      # Step 5: Login to ArgoCD
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > $HOME/.kube/config
+          export KUBECONFIG=$HOME/.kube/config
+
       - name: ArgoCD Login
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
@@ -49,22 +57,18 @@ jobs:
             --password ${{ secrets.ARGOCD_PASSWORD }} \
             --insecure
 
-      # Step 6: Ensure Kubernetes namespace exists
-      - name: Ensure Kubernetes namespace
+      - name: Ensure Kubernetes namespace exists
         run: |
           NAMESPACE="${{ inputs.environment }}"
           kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
 
-      # Step 7: Update Deployment YAML with new image
       - name: Update Deployment Image
         run: |
           DEPLOYMENT_FILE="k8s/${{ inputs.environment }}/deployment.yaml"
           IMAGE="$ACR_NAME.azurecr.io/$FRONTEND_IMAGE:${{ inputs['image-tag'] }}"
-          echo "Updating image in $DEPLOYMENT_FILE -> $IMAGE"
           sed -i "s|image: .*|image: ${IMAGE}|g" $DEPLOYMENT_FILE
           kubectl apply -f $DEPLOYMENT_FILE -n ${{ inputs.environment }}
 
-      # Step 8: Sync ArgoCD Application
       - name: Sync ArgoCD Application
         run: |
           ARGOCD_APP="frontend-${{ inputs.environment }}"

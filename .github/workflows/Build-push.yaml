@@ -60,6 +60,16 @@ jobs:
           echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
           echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
 
+      # 🛠️ FIX: Ensure package-lock.json exists before Docker build
+      - name: Ensure package-lock.json exists
+        run: |
+          if [ ! -f package-lock.json ]; then
+            echo "⚠️ package-lock.json not found — generating one..."
+            npm install --package-lock-only
+          else
+            echo "✅ package-lock.json found"
+          fi
+
       - name: Build and Push UI Image
         env:
           ACR_FULL: ${{ steps.tags.outputs.acr_full }}

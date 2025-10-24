@@ -38,7 +38,7 @@ jobs:
         run: |
           set -e
           echo "Logging into ArgoCD..."
-          argocd login $ARGOCD_DOMAIN --username builduser --password $ARGO_PWD --insecure --grpc-web
+          argocd login $ARGOCD_DOMAIN --username admin --password $ARGO_PWD --insecure --grpc-web
 
           echo "Restarting 'frontend' deployment..."
           argocd app actions run frontend restart --kind Deployment --all --grpc-web

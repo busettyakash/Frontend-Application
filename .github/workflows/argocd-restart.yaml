@@ -1,4 +1,4 @@
-name: Deploy Frontend via ArgoCD
+name: Restart Frontend App via ArgoCD
 
 on:
   workflow_call:
@@ -6,109 +6,37 @@ on:
       environment:
         required: true
         type: string
-      image-tag:
-        required: true
-        type: string
     secrets:
-      ARGOCD_SERVER:
+      ARGO_PWD:
         required: true
-      ARGOCD_USERNAME:
-        required: true
-      ARGOCD_PASSWORD:
-        required: true
-      AZURE_CLIENT_ID:
-        required: true
-      AZURE_TENANT_ID:
-        required: true
-      AZURE_SUBSCRIPTION_ID:
-        required: true
-        
-permissions:
-  id-token: write
-  contents: write
-
-env:
-  ACR_NAME: gvkplatformacr
-  FRONTEND_IMAGE: frontend-dev
 
 jobs:
-  deploy:
+  argocd-restart:
+    name: Restart Frontend App
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      ARGOCD_DOMAIN: ${{ vars.ARGOCD_DOMAIN }}
+      ARGO_PWD: ${{ secrets.ARGO_PWD }}
+      ENVIRONMENT: ${{ inputs.environment }}
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install kubectl
-        run: |
-          set -e
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
-
       - name: Install ArgoCD CLI
         run: |
           set -e
-          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          chmod +x argocd
-          sudo mv argocd /usr/local/bin/
+          echo "Installing ArgoCD CLI..."
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          rm argocd-linux-amd64
+          echo "ArgoCD CLI installed!"
 
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get AKS Credentials
+      - name: Restart Frontend App
         run: |
           set -e
-          az aks get-credentials --resource-group gvk-platform-rg --name gvk-platform-aks --overwrite-existing
-          kubectl get nodes
+          echo "Logging into ArgoCD..."
+          argocd login $ARGOCD_DOMAIN --username builduser --password $ARGO_PWD --insecure --grpc-web
 
-      - name: Ensure Kubernetes namespace exists
-        run: |
-          set -e
-          NAMESPACE=gvk-platform-${{ inputs.environment }}
-          kubectl get namespace $NAMESPACE || kubectl create namespace $NAMESPACE
+          echo "Restarting 'frontend' deployment..."
+          argocd app actions run frontend restart --kind Deployment --all --grpc-web
 
-      - name: ArgoCD Login & Export Token
-        id: argocd-login
-        env:
-          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-        run: |
-          set -e
-          echo "Logging into ArgoCD server $ARGOCD_SERVER"
-          # Login and get bearer token
-          ARGOCD_TOKEN=$(argocd login $ARGOCD_SERVER \
-            --username ${{ secrets.ARGOCD_USERNAME }} \
-            --password ${{ secrets.ARGOCD_PASSWORD }} \
-            --insecure \
-            --grpc-web \
-            --auth-token | grep "bearer" | awk '{print $2}')
-          echo "ARGOCD_TOKEN=$ARGOCD_TOKEN" >> $GITHUB_ENV
-
-      - name: Update Deployment Image & Apply
-        run: |
-          set -e
-          NAMESPACE=gvk-platform-${{ inputs.environment }}
-          DEPLOYMENT_FILE="k8s/${{ inputs.environment }}/deployment.yaml"
-          IMAGE="$ACR_NAME.azurecr.io/$FRONTEND_IMAGE:${{ inputs.environment }}-latest"
-          echo "Updating image to: $IMAGE"
-          sed -i "s|image: .*|image: ${IMAGE}|g" $DEPLOYMENT_FILE
-          kubectl apply -f $DEPLOYMENT_FILE -n $NAMESPACE
-
-      - name: Refresh, Sync & Restart ArgoCD App
-        env:
-          ARGOCD_AUTH_TOKEN: ${{ env.ARGOCD_TOKEN }}
-        run: |
-          set -e
-          ARGOCD_APP="frontend"
-          NAMESPACE=gvk-platform-${{ inputs.environment }}
-          echo "Refreshing ArgoCD app: $ARGOCD_APP"
-          argocd app refresh $ARGOCD_APP --insecure --grpc-web
-          echo "Syncing ArgoCD app: $ARGOCD_APP"
-          argocd app sync $ARGOCD_APP --insecure --grpc-web
-          echo "Waiting for app to be healthy and synced"
-          argocd app wait $ARGOCD_APP --timeout 300 --insecure --grpc-web
-          echo "Restarting K8s deployment: $ARGOCD_APP"
-          kubectl rollout restart deployment $ARGOCD_APP -n $NAMESPACE
+          echo "Frontend app restart triggered successfully!"

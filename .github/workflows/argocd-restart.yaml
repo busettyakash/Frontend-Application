@@ -17,8 +17,9 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Dev via ArgoCD
+    name: Deploy via ArgoCD
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -31,8 +32,11 @@ jobs:
 
       - name: Install ArgoCD CLI
         run: |
-          curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          chmod +x /usr/local/bin/
+          # Install in user directory to avoid permission issues
+          mkdir -p $HOME/bin
+          curl -sSL -o $HOME/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x $HOME/bin/argocd
+          echo "$HOME/bin" >> $GITHUB_PATH
 
       - name: ArgoCD Login
         env:

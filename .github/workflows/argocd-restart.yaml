@@ -45,8 +45,13 @@ jobs:
       - name: Setup kubeconfig
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
           export KUBECONFIG=$HOME/.kube/config
+
+      - name: Test kubeconfig
+        run: |
+          kubectl version --client
+          kubectl get namespaces
 
       - name: ArgoCD Login
         env:

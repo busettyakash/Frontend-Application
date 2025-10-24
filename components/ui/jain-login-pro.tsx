@@ -19,11 +19,11 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    onSignIn?.(event)
     setIsLoading(true)
 
     setTimeout(() => {
       setIsLoading(false)
-      onSignIn?.(event)
     }, 1500)
   }
 
@@ -36,7 +36,7 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
           <div className="mb-12 animate-fade-in">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg text-card">
-                <span className="text-xl font-bold text-white font-serif">J</span>
+                <span className="text-xl font-bold text-white font-sans">J</span>
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white font-sans">Jain University</h1>
@@ -56,7 +56,7 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Email Field */}
             <div className="animate-fade-in-delay-1">
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-sans">
                 Email Address
               </label>
               <div className="relative group">
@@ -77,7 +77,9 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
 
             {/* Password Field */}
             <div className="animate-fade-in-delay-2">
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-sans text-left">Password</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-sans text-left">
+                Password
+              </label>
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition duration-300"></div>
                 <div className="relative flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 backdrop-blur-sm transition-all duration-300 group-focus-within:border-blue-500 dark:group-focus-within:border-blue-400">
@@ -109,7 +111,7 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
                   type="checkbox"
                   className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
-                <span className="text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-bold">
+                <span className="text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-bold font-sans">
                   Keep me signed in
                 </span>
               </label>
@@ -129,7 +131,7 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
             <button
               type="submit"
               disabled={isLoading}
-              className="animate-fade-in-delay-4 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-500 py-3 font-semibold text-white transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:shadow-md flex items-center justify-center gap-2 group bg-background"
+              className="animate-fade-in-delay-4 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-500 py-3 font-semibold text-white transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:shadow-md flex items-center justify-center gap-2 group font-sans"
             >
               {isLoading ? (
                 <>
@@ -148,13 +150,13 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
           {/* Divider */}
           <div className="animate-fade-in-delay-5 relative flex items-center justify-center my-8">
             <span className="w-full border-t border-slate-200 dark:border-slate-700"></span>
-            <span className="px-4 text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 absolute">
+            <span className="px-4 text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 absolute font-sans">
               New here?
             </span>
           </div>
 
           {/* Create Account */}
-          <p className="animate-fade-in-delay-6 text-center text-sm text-slate-600 dark:text-slate-400">
+          <p className="animate-fade-in-delay-6 text-center text-sm text-slate-600 dark:text-slate-400 font-sans">
             <button
               type="button"
               onClick={(e) => {
@@ -168,7 +170,7 @@ export const JainLoginPro: React.FC<JainLoginProProps> = ({ onSignIn, onResetPas
           </p>
 
           {/* Footer */}
-          <div className="animate-fade-in-delay-7 mt-12 pt-8 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400">
+          <div className="animate-fade-in-delay-7 mt-12 pt-8 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400 font-sans">
             <p>
               By signing in, you agree to our{" "}
               <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">

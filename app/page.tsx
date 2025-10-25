@@ -1,17 +1,19 @@
 "use client"
 
 import type React from "react"
+import { useRouter } from "next/navigation"
 import { JainLoginPro } from "@/components/ui/jain-login-pro"
 
 export default function Home() {
+  const router = useRouter()
+
   const handleSignIn = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     const data = Object.fromEntries(formData.entries())
     console.log("Sign In submitted:", data)
-    alert(
-      `Welcome! Sign In Submitted!\n\nEmail: ${data.email}\nRemember Me: ${data.rememberMe ? "Yes" : "No"}\n\nCheck the browser console for full details.`,
-    )
+
+    router.push("/home")
   }
 
   const handleResetPassword = () => {

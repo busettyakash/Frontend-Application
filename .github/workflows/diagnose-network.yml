@@ -1,0 +1,50 @@
+name: Diagnose npm install slowness
+
+on:
+  workflow_dispatch:   # lets you trigger this manually from the Actions tab
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Show runner region/network info
+        run: |
+          echo "=== Runner public IP / region ==="
+          curl -s https://ipinfo.io/json || echo "could not reach ipinfo"
+          echo ""
+
+      - name: Test raw latency to npm registry (4 attempts)
+        run: |
+          echo "=== Raw curl timing to registry.npmjs.org ==="
+          for i in 1 2 3 4; do
+            curl -w "Attempt $i -> Connect: %{time_connect}s | TTFB: %{time_starttransfer}s | Total: %{time_total}s\n" \
+                 -o /dev/null -s https://registry.npmjs.org/react
+          done
+
+      - name: Test raw latency to Docker Hub
+        run: |
+          echo "=== Raw curl timing to registry-1.docker.io ==="
+          for i in 1 2 3 4; do
+            curl -w "Attempt $i -> Connect: %{time_connect}s | TTFB: %{time_starttransfer}s | Total: %{time_total}s\n" \
+                 -o /dev/null -s -I https://registry-1.docker.io/v2/
+          done
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run npm ci with verbose HTTP logging (timed)
+        working-directory: .   # change if your package.json is in a subfolder
+        run: |
+          echo "=== npm ci with --loglevel http, timed ==="
+          time npm ci --loglevel http
+
+      - name: Summary
+        run: |
+          echo "Compare the curl timings above to the npm ci log timestamps."
+          echo "- If curl times are all under ~1s but npm ci was still slow -> not network, look elsewhere."
+          echo "- If curl times are consistently multiple seconds, or npm ci log shows large gaps/retries -> confirmed network issue on this runner."

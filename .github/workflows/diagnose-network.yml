@@ -37,11 +37,14 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run npm ci with verbose HTTP logging (timed)
-        working-directory: .   # change if your package.json is in a subfolder
+      - name: Enable pnpm
+        run: corepack enable pnpm
+
+      - name: Run pnpm install with verbose logging (timed)
+        working-directory: .   # package.json / pnpm-lock.yaml are at repo root
         run: |
-          echo "=== npm ci with --loglevel http, timed ==="
-          time npm ci --loglevel http
+          echo "=== pnpm install --frozen-lockfile, timed ==="
+          time pnpm install --frozen-lockfile --reporter=append-only
 
       - name: Summary
         run: |
